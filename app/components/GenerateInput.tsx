@@ -14,6 +14,7 @@ type Props = {
   disabled?: boolean;
 };
 
+
 export default function GenerateInput({ onSubmit, disabled }: Props) {
   const [value, setValue] = useState("");
   const [listening, setListening] = useState(false); // ✅ added
