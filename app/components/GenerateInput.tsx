@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+// @ts-ignore
+import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 
 const EXAMPLES = [
   "5-min core blast workout",
@@ -15,11 +17,27 @@ type Props = {
 
 export default function GenerateInput({ onSubmit, disabled }: Props) {
   const [value, setValue] = useState("");
+  const [listening, setListening] = useState(false); // ✅ added
+
+  const { transcript, resetTranscript, browserSupportsSpeechRecognition } =
+    useSpeechRecognition();
+
+  // ✅ Voice → input sync
+  useEffect(() => {
+    if (transcript) {
+      setValue(transcript);
+    }
+  }, [transcript]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
+
+    SpeechRecognition.stopListening(); // ✅ stop mic
+    setListening(false);
+
     onSubmit(trimmed);
   };
 
@@ -28,6 +46,10 @@ export default function GenerateInput({ onSubmit, disabled }: Props) {
     setValue(example);
     onSubmit(example);
   };
+
+  if (!browserSupportsSpeechRecognition) {
+    return <p>Your browser does not support speech recognition.</p>;
+  }
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -39,6 +61,7 @@ export default function GenerateInput({ onSubmit, disabled }: Props) {
           >
             AI
           </span>
+
           <input
             type="text"
             value={value}
@@ -49,6 +72,47 @@ export default function GenerateInput({ onSubmit, disabled }: Props) {
             style={{ fontFamily: "var(--font-chakra-petch)" }}
           />
         </div>
+
+        {/* 🎤 Start */}
+        <button
+          type="button"
+          onClick={() => {
+            SpeechRecognition.startListening({
+              continuous: true,
+              language: "en-IN",
+            });
+            setListening(true);
+          }}
+          className="neon-btn px-3 py-2 text-xs"
+        >
+          Start
+        </button>
+
+        {/* ⛔ Stop */}
+        <button
+          type="button"
+          onClick={() => {
+            SpeechRecognition.stopListening();
+            setListening(false);
+          }}
+          className="neon-btn px-3 py-2 text-xs"
+        >
+          Stop
+        </button>
+
+        {/* 🧹 Clear */}
+        <button
+          type="button"
+          onClick={() => {
+            resetTranscript();
+            setValue("");
+          }}
+          className="neon-btn px-3 py-2 text-xs"
+        >
+          Clear
+        </button>
+
+        {/* 🚀 Generate */}
         <button
           type="submit"
           disabled={disabled || !value.trim()}
@@ -58,6 +122,7 @@ export default function GenerateInput({ onSubmit, disabled }: Props) {
           Generate
         </button>
       </form>
+
       <div className="flex flex-wrap gap-2 mt-2">
         {EXAMPLES.map((ex) => (
           <button
