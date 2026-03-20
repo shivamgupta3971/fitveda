@@ -9,7 +9,6 @@ const EXAMPLES = [
   "Upper body HIIT routine",
   "Yoga sun salutation flow",
 ];
-
 type Props = {
   onSubmit: (prompt: string) => void;
   disabled?: boolean;
