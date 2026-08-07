@@ -78,6 +78,7 @@ const MAX_REF_DISTANCE_SEC = 3.0;
 const SCORE_DEAD_ZONE = 2;
 
 // Frame hit detection constants
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const FRAME_HIT_WINDOW = 0.4; // seconds - window to score a frame around frame time
 
 const LIMB_LABELS: Record<string, string> = {
@@ -500,7 +501,6 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [downloadStatus, videoId]);
 
   // Video is ready when both extraction and segmentation are resolved

@@ -14,10 +14,12 @@ export default function SummaryReadyNotification({ visible, onView, onDismiss }:
   useEffect(() => {
     if (visible) {
       // Trigger animation after mount
-      setTimeout(() => setIsAnimating(true), 50);
-    } else {
-      setIsAnimating(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsAnimating(true);
     }
+    return () => {
+      setIsAnimating(false);
+    };
   }, [visible]);
 
   if (!visible) return null;

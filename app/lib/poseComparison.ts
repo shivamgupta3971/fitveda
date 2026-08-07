@@ -192,7 +192,6 @@ export function comparePosesDetailed(
 
   for (const [limb, joints] of Object.entries(LIMB_JOINTS)) {
     const distances: number[] = [];
-    let missingCount = 0;
 
     for (const idx of joints) {
       const r = refNorm[idx];
@@ -206,7 +205,6 @@ export function comparePosesDetailed(
       // Check if user's landmark exists
       if (!l || (l.visibility ?? 0) < 0.3) {
         // User is missing a landmark that the reference has - penalize heavily
-        missingCount++;
         distances.push(THRESH_OK * 2); // Maximum penalty distance
       } else {
         // Both landmarks exist - measure distance

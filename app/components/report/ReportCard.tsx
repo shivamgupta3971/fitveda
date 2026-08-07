@@ -37,12 +37,7 @@ export default function ReportCard({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
-
-  // Reset slide when opening
-  useEffect(() => {
-    setSlide(0);
-  }, [report]);
+  }, [onClose, report]);
 
   const dotColor = isGym ? "#a0d4ff" : "#00ffff";
   const dotGlow = isGym

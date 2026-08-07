@@ -89,7 +89,16 @@ const YoutubePanel = forwardRef<YoutubePanelHandle, Props>(function YoutubePanel
     togglePlayPause: () => {
       const v = videoRef.current;
       if (!v) return;
-      v.paused ? v.play() : v.pause();
+      if (v.paused) {
+        v.play().catch((err: unknown) => {
+          if (err instanceof DOMException && err.name === "AbortError") {
+            return;
+          }
+          console.error("Video play failed:", err);
+        });
+      } else {
+        v.pause();
+      }
     },
   }));
 

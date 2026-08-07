@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
 
     const { summary, history, mode } = await req.json() as {
       summary: unknown;
-      history: any[];
+      history: Array<{ role: string; content: string }>;
       mode?: AppMode;
     };
 

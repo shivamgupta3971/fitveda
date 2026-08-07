@@ -121,7 +121,7 @@ export const findClosestPose = (
   for (const pose of poses) {
     // Assuming poses have timestamps from the original Pose type
     // We'll need to track this through normalization
-    const diff = Math.abs((pose as any).timestamp - timestamp);
+    const diff = Math.abs(((pose as { timestamp?: number }).timestamp ?? 0) - timestamp);
     if (diff < minDiff) {
       minDiff = diff;
       closestPose = pose;

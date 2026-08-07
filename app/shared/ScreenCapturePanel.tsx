@@ -27,7 +27,11 @@ export default function ScreenCapturePanel({ onPose, onStop, onAspectRatio }: Pr
   const smootherRef = useRef(new LandmarkSmoother());
 
   const onPoseRef = useRef(onPose);
-  onPoseRef.current = onPose;
+  useEffect(() => {
+    onPoseRef.current = onPose;
+  }, [onPose]);
+
+  const processFrameRef = useRef<() => void>(() => {});
 
   const processFrame = useCallback(async () => {
     if (!activeRef.current) return;
@@ -59,9 +63,12 @@ export default function ScreenCapturePanel({ onPose, onStop, onAspectRatio }: Pr
     }
 
     if (activeRef.current) {
-      animFrameRef.current = requestAnimationFrame(processFrame);
+      animFrameRef.current = requestAnimationFrame(processFrameRef.current);
     }
   }, []);
+  useEffect(() => {
+    processFrameRef.current = processFrame;
+  }, [processFrame]);
 
   const stopCapture = useCallback(() => {
     activeRef.current = false;
@@ -152,7 +159,6 @@ export default function ScreenCapturePanel({ onPose, onStop, onAspectRatio }: Pr
         setError("Could not start screen capture.");
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onStop, processFrame, onAspectRatio, stopCapture]);
 
   useEffect(() => {

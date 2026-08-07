@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { StripPoseTimeline } from "../lib/videoPoseExtractor";
 
 type Props = {
@@ -33,18 +33,18 @@ export default function RecordReplayPanel({
   onStopReplay,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const recordingRef = useRef(false);
-  const hasLoadedRef = useRef(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   // Only visible when video is loaded and poses are extracted
   if (!videoId || !poseTimeline) return null;
 
   const handleRecordToggle = () => {
-    if (recordingRef.current) {
-      recordingRef.current = false;
+    if (isRecording) {
+      setIsRecording(false);
       onStopRecord();
     } else {
-      recordingRef.current = true;
+      setIsRecording(true);
       onStartRecord();
     }
   };
@@ -52,7 +52,7 @@ export default function RecordReplayPanel({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      hasLoadedRef.current = true;
+      setHasLoaded(true);
       onLoadRecording(file);
     }
     // Reset so same file can be reloaded
@@ -90,14 +90,14 @@ export default function RecordReplayPanel({
           onClick={handleRecordToggle}
           disabled={isReplaying}
           className={`${btnBase} ${
-            recordingRef.current
+            isRecording
               ? "border-red-500/60 text-red-400 bg-red-500/10 hover:bg-red-500/20"
               : "border-red-500/30 text-red-400/70 hover:border-red-500/50 hover:bg-red-500/10"
           } disabled:opacity-30 disabled:cursor-not-allowed`}
           style={fontStyle}
-          title={recordingRef.current ? "Stop recording" : "Start recording"}
+          title={isRecording ? "Stop recording" : "Start recording"}
         >
-          {recordingRef.current ? "\u25A0 Stop" : "\u25CF Rec"}
+          {isRecording ? "\u25A0 Stop" : "\u25CF Rec"}
         </button>
 
         {/* Load recording */}
@@ -119,12 +119,12 @@ export default function RecordReplayPanel({
         />
 
         {/* Divider */}
-        {hasLoadedRef.current && (
+        {hasLoaded && (
           <div className="w-px h-5 bg-neon-cyan/20 mx-1" />
         )}
 
         {/* Replay controls — shown after a recording is loaded */}
-        {hasLoadedRef.current && !isReplaying && (
+        {hasLoaded && !isReplaying && (
           <button
             onClick={onStartReplay}
             className={`${btnBase} border-green-500/30 text-green-400/70 hover:border-green-500/50 hover:bg-green-500/10`}

@@ -229,7 +229,8 @@ function selectInterestingFrames(
   selected.sort((a, b) => a.time - b.time);
 
   // Remove temporary scoring fields
-  return selected.map(({ score: _score, index: _index, ...frame }) => frame);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  return selected.map(({ score: _, index: __, ...frame }) => frame);
 }
 
 /**

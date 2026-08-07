@@ -249,7 +249,7 @@ export async function getCoachMessage(
     }
 
     const data = await res.json();
-    let message: string = data.message ?? "Keep going!";
+    const message: string = data.message ?? "Keep going!";
     const audio: string | undefined = data.audio;
 
     // Suppress exact duplicates within 15s
@@ -321,10 +321,10 @@ export function resetCoach(): void {
 // ──────────────────────────────────────────────
 
 /** TODO: Suno — overlay dynamically generated music */
-export function sunoMusicOverlay(_videoId: string): void {}
+export function sunoMusicOverlay(): void {}
 
 /** TODO: HeyGen — selectable coach avatar overlay */
-export function heyGenCoachAvatar(_style: string): void {}
+export function heyGenCoachAvatar(): void {}
 
 /** TODO: Modal — host segmentation / pose model on Modal */
-export function modalSegmentationModel(_frame: ImageData): void {}
+export function modalSegmentationModel(): void {}

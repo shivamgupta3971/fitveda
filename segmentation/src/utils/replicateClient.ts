@@ -56,7 +56,7 @@ export const isBackendConfigured = async (): Promise<boolean> => {
     if (!response.ok) return false;
     const data = await response.json();
     return data.modal === true;
-  } catch (error) {
+  } catch {
     return false;
   }
 };

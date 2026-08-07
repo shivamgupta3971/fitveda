@@ -72,6 +72,8 @@ export default function CameraPanel({ onPose, segmentedVideoUrl, referenceVideoT
   const animFrameRef = useRef<number>(0);
   const activeRef = useRef(true);
   const overlayRafRef = useRef<number>(0);
+  const overlayLoadTokenRef = useRef(0);
+  const overlayPlayPromiseRef = useRef<Promise<void> | null>(null);
 
   // Refs for values that change frequently (to avoid restarting rAF loop)
   const referenceVideoTimeRef = useRef(referenceVideoTime);
@@ -99,20 +101,57 @@ export default function CameraPanel({ onPose, segmentedVideoUrl, referenceVideoT
     }
   }, []);
 
+  const requestOverlayPlay = useCallback((video: HTMLVideoElement) => {
+    if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+    if (!video.paused) return;
+    if (overlayPlayPromiseRef.current) return;
+
+    const playPromise = video.play();
+    if (!playPromise) return;
+
+    overlayPlayPromiseRef.current = playPromise;
+    playPromise
+      .catch((err: unknown) => {
+        // Source changes can abort in-flight play() promises; ignore that expected case.
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
+        console.error("Overlay video play failed:", err);
+      })
+      .finally(() => {
+        if (overlayPlayPromiseRef.current === playPromise) {
+          overlayPlayPromiseRef.current = null;
+        }
+      });
+  }, []);
+
   // Load and play the segmented overlay video when URL changes
   useEffect(() => {
     const video = overlayVideoRef.current;
     if (!video || !segmentedVideoUrl) return;
 
+    const loadToken = ++overlayLoadTokenRef.current;
     video.crossOrigin = "anonymous";
-    video.src = segmentedVideoUrl;
     video.loop = true;
     video.muted = true;
     video.playbackRate = playbackRate;
-    video.play().catch((err) => {
-      console.error("Overlay video play failed:", err);
-    });
-  }, [segmentedVideoUrl, playbackRate]);
+    video.pause();
+    overlayPlayPromiseRef.current = null;
+    video.src = segmentedVideoUrl;
+    video.load();
+
+    const handleCanPlay = () => {
+      if (loadToken !== overlayLoadTokenRef.current) return;
+      video.playbackRate = playbackRate;
+      requestOverlayPlay(video);
+    };
+
+    video.addEventListener("canplay", handleCanPlay, { once: true });
+
+    return () => {
+      video.removeEventListener("canplay", handleCanPlay);
+    };
+  }, [segmentedVideoUrl, playbackRate, requestOverlayPlay]);
 
   // Update playback rate when it changes
   useEffect(() => {
@@ -142,9 +181,7 @@ export default function CameraPanel({ onPose, segmentedVideoUrl, referenceVideoT
         if (refPaused && !overlayVideo.paused) {
           overlayVideo.pause();
         } else if (!refPaused && overlayVideo.paused) {
-          overlayVideo.play().catch(() => {
-            // Ignore play failures
-          });
+          requestOverlayPlay(overlayVideo);
         }
 
         // Tight sync: reduce drift threshold to 0.05s (50ms) for near-perfect sync
@@ -269,7 +306,7 @@ export default function CameraPanel({ onPose, segmentedVideoUrl, referenceVideoT
     return () => {
       cancelAnimationFrame(overlayRafRef.current);
     };
-  }, [segmentedVideoUrl, referenceVideoAspectRatio]);
+  }, [segmentedVideoUrl, referenceVideoAspectRatio, requestOverlayPlay]);
 
   const processFrame = useCallback(async () => {
     if (!activeRef.current) return;
@@ -307,7 +344,12 @@ export default function CameraPanel({ onPose, segmentedVideoUrl, referenceVideoT
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          await videoRef.current.play();
+          await videoRef.current.play().catch((err: unknown) => {
+            if (err instanceof DOMException && err.name === "AbortError") {
+              return;
+            }
+            console.error("Webcam play failed:", err);
+          });
 
           // Report webcam aspect ratio once video is ready
           if (onWebcamAspectRatio && videoRef.current.videoWidth && videoRef.current.videoHeight) {
@@ -362,7 +404,7 @@ export default function CameraPanel({ onPose, segmentedVideoUrl, referenceVideoT
         stream.getTracks().forEach((t) => t.stop());
       }
     };
-  }, [onPose, processFrame, webcamCaptureRef, webcamStreamRef]);
+  }, [onPose, processFrame, webcamCaptureRef, webcamStreamRef, onWebcamAspectRatio]);
 
   return (
     <div className="relative w-full h-full rounded overflow-hidden border border-neon-magenta/15 bg-black glow-magenta">

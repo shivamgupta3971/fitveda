@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { drawSkeleton, loadPose } from "./pose";
 import type { NormalizedLandmark, PoseResults } from "./pose";
 import { withPoseLock } from "./poseMutex";
@@ -21,13 +21,39 @@ export default function CameraPanel({ onPose, badge = "LIVE", segmentedVideoUrl,
   const overlayVideoRef = useRef<HTMLVideoElement>(null);
   const canvasSizeRef = useRef({ w: 0, h: 0 });
   const onPoseRef = useRef(onPose);
-  onPoseRef.current = onPose;
+
+  // Update ref when onPose changes (moved to useEffect below)
+  useEffect(() => {
+    onPoseRef.current = onPose;
+  }, [onPose]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const poseRef = useRef<any>(null);
   const activeRef = useRef(true);
   const animRef = useRef(0);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
   const smootherRef = useRef(new LandmarkSmoother());
+  const overlayPlayPromiseRef = useRef<Promise<void> | null>(null);
+
+  const requestOverlayPlay = (video: HTMLVideoElement) => {
+    if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+    if (!video.paused) return;
+    if (overlayPlayPromiseRef.current) return;
+
+    const playPromise = video.play();
+    if (!playPromise) return;
+
+    overlayPlayPromiseRef.current = playPromise;
+    playPromise
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("Overlay video play failed:", err);
+      })
+      .finally(() => {
+        if (overlayPlayPromiseRef.current === playPromise) {
+          overlayPlayPromiseRef.current = null;
+        }
+      });
+  };
 
   // Sync overlay video time
   useEffect(() => {
@@ -37,47 +63,49 @@ export default function CameraPanel({ onPose, badge = "LIVE", segmentedVideoUrl,
         overlayVideoRef.current.currentTime = referenceVideoTime;
       }
       if (overlayVideoRef.current.paused && referenceVideoTime > 0) {
-        overlayVideoRef.current.play().catch(() => {});
+        requestOverlayPlay(overlayVideoRef.current);
       }
     }
   }, [referenceVideoTime, segmentedVideoUrl]);
 
-  const processFrame = useCallback(async () => {
-    if (!activeRef.current) return;
-
-    const video = videoRef.current;
-    const pose = poseRef.current;
-
-    if (video && pose && video.readyState >= 2) {
-      let oc = offscreenRef.current;
-      if (!oc) {
-        oc = document.createElement("canvas");
-        offscreenRef.current = oc;
-      }
-      const vw = video.videoWidth || 640;
-      const vh = video.videoHeight || 480;
-      if (oc.width !== vw || oc.height !== vh) {
-        oc.width = vw;
-        oc.height = vh;
-      }
-      const octx = oc.getContext("2d");
-      if (octx) {
-        octx.drawImage(video, 0, 0, oc.width, oc.height);
-        try {
-          await withPoseLock(() => pose.send({ image: oc }));
-        } catch {
-          // transient error
-        }
-      }
-    }
-
-    if (activeRef.current) {
-      animRef.current = requestAnimationFrame(processFrame);
-    }
-  }, []);
-
   useEffect(() => {
     activeRef.current = true;
+    
+    const processFrame = async () => {
+      if (!activeRef.current) return;
+
+      const video = videoRef.current;
+      const pose = poseRef.current;
+
+      if (video && pose && video.readyState >= 2) {
+        let oc = offscreenRef.current;
+        if (!oc) {
+          oc = document.createElement("canvas");
+          offscreenRef.current = oc;
+        }
+        const vw = video.videoWidth || 640;
+        const vh = video.videoHeight || 480;
+        if (oc.width !== vw || oc.height !== vh) {
+          oc.width = vw;
+          oc.height = vh;
+        }
+        const octx = oc.getContext("2d");
+        if (octx) {
+          octx.drawImage(video, 0, 0, oc.width, oc.height);
+          try {
+            await withPoseLock(() => pose.send({ image: oc }));
+          } catch {
+            // transient error
+          }
+        }
+      }
+
+      if (activeRef.current) {
+        animRef.current = requestAnimationFrame(processFrame);
+      }
+    };
+
+    const currentSmoother = smootherRef.current;
     let stream: MediaStream | null = null;
 
     const init = async () => {
@@ -132,10 +160,10 @@ export default function CameraPanel({ onPose, badge = "LIVE", segmentedVideoUrl,
     return () => {
       activeRef.current = false;
       cancelAnimationFrame(animRef.current);
-      smootherRef.current.reset();
+      currentSmoother.reset();
       if (stream) stream.getTracks().forEach((t) => t.stop());
     };
-  }, [processFrame]);
+  }, []);
 
   return (
     <div className="relative w-full h-full rounded-2xl overflow-hidden border border-white/10 bg-black">

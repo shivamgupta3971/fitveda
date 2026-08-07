@@ -106,8 +106,8 @@ export const extractPosesFromVideo = async (
             const poseWithTimestamp = {
               ...pose,
               timestamp: time, // Keep in seconds to match video.currentTime
-            };
-            poses.push(poseWithTimestamp as any);
+            } as Pose & { timestamp: number };
+            poses.push(poseWithTimestamp);
           }
 
           onProgress?.((i + 1) / totalFrames);

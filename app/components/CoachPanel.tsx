@@ -26,7 +26,7 @@ function scoreToLabel(score: number): string {
   return "";
 }
 
-export default function CoachPanel({ score, message, showScore, mode = "dance" }: Props) {
+export default function CoachPanel({ score, message, mode = "dance" }: Props) {
   const [muted, _setMuted] = useState(isMuted());
   const toggleMute = () => {
     const next = !muted;
@@ -37,16 +37,17 @@ export default function CoachPanel({ score, message, showScore, mode = "dance" }
   // Track label changes for bounce animation
   const label = scoreToLabel(score);
   const prevLabelRef = useRef(label);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [labelBounce, setLabelBounce] = useState(false);
 
   useEffect(() => {
     if (label && label !== prevLabelRef.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLabelBounce(true);
       const t = setTimeout(() => setLabelBounce(false), 400);
       prevLabelRef.current = label;
       return () => clearTimeout(t);
     }
-    prevLabelRef.current = label;
   }, [label]);
 
   // All reactive colors as inline styles for smooth CSS transitions

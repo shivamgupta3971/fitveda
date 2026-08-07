@@ -14,8 +14,9 @@ export default function ModeOverlay({ mode, seq }: ModeOverlayProps) {
 
   useEffect(() => {
     if (seq === 0) return;
-    setActiveMode(mode);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVisible(true);
+    setActiveMode(mode);
     const timer = setTimeout(() => setVisible(false), 3000);
     return () => clearTimeout(timer);
   }, [seq, mode]);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-// @ts-ignore
+// @ts-expect-error react-speech-recognition types are incomplete
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 
 const EXAMPLES = [
@@ -17,14 +17,13 @@ type Props = {
 
 export default function GenerateInput({ onSubmit, disabled }: Props) {
   const [value, setValue] = useState("");
-  const [listening, setListening] = useState(false); // ✅ added
 
   const { transcript, resetTranscript, browserSupportsSpeechRecognition } =
     useSpeechRecognition();
 
-  // ✅ Voice → input sync
   useEffect(() => {
     if (transcript) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setValue(transcript);
     }
   }, [transcript]);
@@ -36,7 +35,7 @@ export default function GenerateInput({ onSubmit, disabled }: Props) {
     if (!trimmed || disabled) return;
 
     SpeechRecognition.stopListening(); // ✅ stop mic
-    setListening(false);
+    resetTranscript(); // Clear the transcript
 
     onSubmit(trimmed);
   };
@@ -81,7 +80,6 @@ export default function GenerateInput({ onSubmit, disabled }: Props) {
               continuous: true,
               language: "en-IN",
             });
-            setListening(true);
           }}
           className="neon-btn px-3 py-2 text-xs"
         >
@@ -93,7 +91,6 @@ export default function GenerateInput({ onSubmit, disabled }: Props) {
           type="button"
           onClick={() => {
             SpeechRecognition.stopListening();
-            setListening(false);
           }}
           className="neon-btn px-3 py-2 text-xs"
         >

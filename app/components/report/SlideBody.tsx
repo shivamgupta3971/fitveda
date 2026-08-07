@@ -44,8 +44,6 @@ export default function SlideBody({ stats, report, active, mode }: Props) {
   const bestKey = entries.length > 0 ? entries.reduce((a, b) => (b[1] > a[1] ? b : a))[0] : "";
   const worstKey = entries.length > 0 ? entries.reduce((a, b) => (b[1] < a[1] ? b : a))[0] : "";
 
-  const titleColor = isGym ? gc.color : undefined;
-
   return (
     <div
       className={`absolute inset-0 flex flex-col items-center justify-center px-8 transition-opacity duration-500 ${

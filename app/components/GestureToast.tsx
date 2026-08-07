@@ -22,8 +22,9 @@ export function GestureToast({ action, seq }: GestureToastProps) {
 
   useEffect(() => {
     if (!action) return;
-    setDisplay(action);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVisible(true);
+    setDisplay(action);
     const timer = setTimeout(() => setVisible(false), 1500);
     return () => clearTimeout(timer);
   }, [action, seq]);

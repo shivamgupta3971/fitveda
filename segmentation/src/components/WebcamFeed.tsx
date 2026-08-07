@@ -89,7 +89,12 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({
       });
 
       webcamRef.current.srcObject = stream;
-      await webcamRef.current.play();
+      await webcamRef.current.play().catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return;
+        }
+        console.error('Webcam play failed:', err);
+      });
 
       const render = () => {
         if (!webcamRef.current || !canvasRef.current) return;
@@ -157,6 +162,9 @@ export const WebcamFeed: React.FC<WebcamFeedProps> = ({
       video.src = segmentedVideoUrl;
       video.loop = true;
       video.play().catch(err => {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return;
+        }
         console.error('Video play failed:', err);
       });
     }

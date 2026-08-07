@@ -10,18 +10,17 @@ export const DeviationScore: React.FC<DeviationScoreProps> = ({
   currentScore,
   confidence,
 }) => {
-  const [, setScoreHistory] = useState<number[]>([]);
+  const [scoreHistory, setScoreHistory] = useState<number[]>([]);
   const [smoothedScore, setSmoothedScore] = useState<number>(0);
 
   // Update score history and calculate smoothed score
   useEffect(() => {
-    setScoreHistory((prev) => {
-      const newHistory = [...prev, currentScore].slice(-10); // Keep last 10 scores
-      const averaged = calculateMovingAverage(newHistory, 5);
-      setSmoothedScore(averaged);
-      return newHistory;
-    });
-  }, [currentScore]);
+    const newHistory = [...scoreHistory, currentScore].slice(-10); // Keep last 10 scores
+    const averaged = calculateMovingAverage(newHistory, 5);
+     // eslint-disable-next-line react-hooks/set-state-in-effect
+     setSmoothedScore(averaged);
+     setScoreHistory(newHistory);
+   }, [currentScore, scoreHistory]);
 
   const color = getDeviationColor(smoothedScore);
 
